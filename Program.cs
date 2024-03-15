@@ -1,8 +1,17 @@
-﻿using System.Net.Sockets;
+﻿using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 if (args.Length < 2 || args.Length > 3)
-    throw new ArgumentException("Parameters: <Server> <Word> [<Port>]");
+{
+    args = new string[3];
+    Console.Write("Server = ");
+    args[0] = Console.ReadLine();
+    Console.Write("Word = ");
+    args[1] = Console.ReadLine();
+    Console.Write("Port = ");
+    args[2] = Console.ReadLine();
+}
 
 string server = args[0];//Server
 
@@ -12,34 +21,33 @@ int servPort = args.Length == 3 ? int.Parse(args[2]) : 7;
 
 try
 {
-    using TcpClient client = new(server, servPort);
+    using Socket sock = new(AddressFamily.InterNetwork, SocketType.Stream,
+       ProtocolType.Tcp);
 
-    Console.WriteLine("Connected to server!\nSending echo string...");
+    sock.Connect(server, servPort);
+    Console.WriteLine($"Connected to server {sock.RemoteEndPoint}!");
+    Console.WriteLine("Sending echo string...");
 
-    using NetworkStream netStream = client.GetStream();
-    netStream.Write(byteBuffer, 0, byteBuffer.Length);
+    sock.Send(byteBuffer, 0, byteBuffer.Length, SocketFlags.None);
+    Console.WriteLine("Sent {0} bytes to server...", byteBuffer.Length);
 
-    Console.WriteLine($"Sent {byteBuffer.Length} bytes to server!" +
-        $"\nReceiving bytes...");
+    int totalRcvd = 0;
+    int bytesRcvd = 0;
+    byte[] response = new byte[byteBuffer.Length];
 
-    int totalBytesRcvd = 0;
-    int bytesRcvdn = 0;
-    byte[] bufferRcvd = new byte[byteBuffer.Length];
-
-    while (totalBytesRcvd < bufferRcvd.Length)
+    while (totalRcvd < byteBuffer.Length)
     {
-        if ((bytesRcvdn = netStream.Read(bufferRcvd, totalBytesRcvd,
-            bufferRcvd.Length - totalBytesRcvd)) == 0)
+        if ((bytesRcvd = sock.Receive(response, totalRcvd, response.Length,
+            SocketFlags.None)) == 0)
         {
-            Console.WriteLine("Connection closed prematurely");
+            Console.WriteLine("Connection closed prematurely.");
             break;
         }
-
-        totalBytesRcvd += bytesRcvdn;
+        totalRcvd += bytesRcvd;
     }
 
-    Console.WriteLine($"Received {totalBytesRcvd} bytes from server: " +
-        $"{Encoding.ASCII.GetString(bufferRcvd, 0, bufferRcvd.Length)}");
+    Console.WriteLine("Received {0} bytes from server: {1}", totalRcvd,
+        Encoding.ASCII.GetString(response));
 }
 catch (Exception e)
 {

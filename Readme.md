@@ -1,1 +1,1 @@
-"Simple TCP client via c# .Net 8.0" 
+Socket Version of the TCP Client!
