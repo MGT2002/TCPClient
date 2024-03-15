@@ -37,8 +37,8 @@ try
 
     while (totalRcvd < byteBuffer.Length)
     {
-        if ((bytesRcvd = sock.Receive(response, totalRcvd, response.Length,
-            SocketFlags.None)) == 0)
+        if ((bytesRcvd = sock.Receive(response, totalRcvd,
+            response.Length - totalRcvd, SocketFlags.None)) == 0)
         {
             Console.WriteLine("Connection closed prematurely.");
             break;
